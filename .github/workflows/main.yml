@@ -1,0 +1,45 @@
+name: 'macOS Runner'
+description: 'Run macOS virtual machine tasks'
+branding:
+  icon: 'terminal'
+  color: 'gray-dark'
+
+inputs:
+  command:
+    description: 'Command to run'
+    required: false
+    default: 'echo "Task completed"'
+
+outputs:
+  status:
+    description: 'Job status'
+    value: ${{ steps.runner.outputs.status }}
+
+runs:
+  using: 'composite'
+  
+  steps:
+    - name: System Info
+      id: info
+      shell: bash
+      run: |
+        echo "✅ macOS $(sw_vers -productVersion)"
+        echo "✅ CPU: $(sysctl -n machdep.cpu.brand_string)"
+        echo "✅ Cores: $(sysctl -n hw.ncpu)"
+        echo "✅ Memory: $(($(sysctl -n hw.memsize) / 1073741824)) GB"
+        echo "✅ Disk: $(df -h / | awk 'NR==2 {print $4}') free"
+        
+    - name: Run Command
+      id: runner
+      shell: bash
+      run: |
+        echo "🚀 Executing: ${{ inputs.command }}"
+        ${{ inputs.command }}
+        echo "status=success" >> $GITHUB_OUTPUT
+        
+    - name: Cleanup
+      shell: bash
+      run: |
+        echo "🧹 Cleaning up..."
+        rm -rf __pycache__ || true
+        echo "✅ Done"
